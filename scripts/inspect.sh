@@ -41,7 +41,7 @@ sec "5. 陈旧 remote-tracking 引用"
 if git remote get-url origin >/dev/null 2>&1; then
   T_LS="$(mktemp)"; T_LO="$(mktemp)"
   git ls-remote --heads origin 2>/dev/null | awk '{print $2}' | sed 's|refs/heads/||' | sort > "$T_LS"
-  git for-each-ref --format='%(refname:short)' refs/remotes/origin | sed 's|origin/||' | sort > "$T_LO"
+  git for-each-ref --format='%(refname)' refs/remotes/origin | grep -v 'refs/remotes/origin/HEAD$' | sed 's|refs/remotes/origin/||' | sort > "$T_LO"
   comm -23 "$T_LO" "$T_LS" | sed 's/^/  STALE: origin\//'
   rm -f "$T_LS" "$T_LO"
 else echo "  (no origin)"; fi
