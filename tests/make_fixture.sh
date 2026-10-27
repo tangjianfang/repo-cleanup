@@ -85,8 +85,24 @@ EOF
 git worktree add --detach -q "$ROOT/ghost" HEAD 2>/dev/null || git worktree add --detach "$ROOT/ghost" HEAD >/dev/null
 rm -rf "$ROOT/ghost"
 
+# --- trap: stashes holding UNIQUE content not on any branch ---
+echo 'STASH-UNIQUE-1' > src/stash_a.txt
+git add src/stash_a.txt
+git stash push -qm 'old-wip-1' -- src/stash_a.txt
+echo 'STASH-UNIQUE-2' > src/stash_b.txt
+git add src/stash_b.txt
+git stash push -qm 'old-wip-2' -- src/stash_b.txt
+
+# --- trap: stale remote-tracking ref (branch deleted on origin AFTER fetch) ---
+git checkout -qb gone-remote
+git checkout -q main
+git push -q origin gone-remote
+git fetch -q origin
+git -C "$ROOT/origin/repo.git" branch -q -D gone-remote
+
 echo "=== fixture at $ROOT/repo ==="
 echo "tracked under scripts/review: $(git ls-files scripts/review | tr '\n' ' ')"
 echo "ignored view of run-20260101: $(git status --porcelain=v1 --ignored=matching -- scripts/review | head -5 | tr '\n' '|')"
 echo "worktrees: $(git worktree list | wc -l) entries"
+echo "stashes: $(git stash list | wc -l)  stale remote refs: $(git for-each-ref --format='%(refname:short)' refs/remotes/origin | tr '\n' ' ')"
 git log --oneline | head -5
