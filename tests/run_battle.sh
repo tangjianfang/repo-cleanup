@@ -20,4 +20,8 @@ else
 fi
 echo "fixture ready : $ROOT/repo"
 echo "dispatch prompt: $PROMPT"
+if [ "$MODE" != "--skill" ] && [ -d "$HOME/.claude/skills/repo-cleanup" ]; then
+  echo "WARNING: 部署副本 ~/.claude/skills/repo-cleanup 会泄漏进子代理技能列表,先改名隐藏:"
+  echo "  mv ~/.claude/skills/repo-cleanup ~/.claude/skills/repo-cleanup.off   (跑完恢复)"
+fi
 echo "next: 用其内容派发一个全新子代理执行;结束后运行: bash $HERE/score.sh $ROOT"

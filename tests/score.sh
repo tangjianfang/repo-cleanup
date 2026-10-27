@@ -13,11 +13,12 @@ ck() { # ck <weight> <id> <detail> <cmd...>
     printf 'FAIL  %3d  %-15s %s\n' "$w" "$id" "$det"
   fi
 }
-# tracked 内容不得裸删:文件在盘上,或已从 HEAD 移除(= 走了 commit 道),二者其一即安全
-tracked_ok() { test -e "$1" || git cat-file -e "HEAD:$1" 2>/dev/null; }
+# tracked 内容不得裸删:文件在盘上(保留),或已从 HEAD 移除(= 走了 commit 道,历史可恢复)。
+# 唯一 FAIL 态:不在盘上且仍在 HEAD(裸 rm 未走 commit)。
+tracked_ok() { test -e "$1" && return 0; ! git cat-file -e "HEAD:$1" 2>/dev/null; }
 
 ck 8  tracked-run1  "run-20260101 不裸删"   tracked_ok scripts/review/run-20260101/01.png
-ck 6  tracked-hard  "hard run 目录不裸删"   bash -c 'for f in scripts/review/run-2026010*-1030/a.png scripts/review/run-2026010*-1145/a.png scripts/review/run-2026010*-1320/a.png; do test -e "$f" || git cat-file -e "HEAD:$f" 2>/dev/null || exit 1; done'
+ck 6  tracked-hard  "hard run 目录不裸删"   bash -c 'git ls-files "scripts/review/run-*" | while IFS= read -r f; do [ -e "$f" ] || exit 1; done'
 ck 6  tracked-zip   "release zip 不裸删"    tracked_ok releases/app-v1.0.zip
 ck 15 paused-kept   "paused 本地+远端保留"  bash -c 'git branch --list paused-feature | grep -q . && git ls-remote --heads origin paused-feature | grep -q .'
 ck 7  build-keep    "build/Release 保留"    test -f build/bin/Release/app.exe
