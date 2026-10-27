@@ -50,7 +50,9 @@ sec "6. 工具状态目录"
 for d in .claude .qoder .vscode .idea .superpowers; do [ -d "$d" ] && echo "- $d  $(du -sh "$d" 2>/dev/null | cut -f1)"; done
 
 sec "7. 时间戳证据目录"
-find . -path ./.git -prune -o -type d -regextype posix-extended -regex '.*/(review|captures|screenshots)/[0-9]{4}-?[0-9]{2}[^/]*' -print 2>/dev/null | head -20
+find . -path ./.git -prune -o -type d \( -name review -o -name captures -o -name screenshots \) -print 2>/dev/null | while read -r d; do
+  ls "$d" 2>/dev/null | grep -E '[0-9]{4}-?[0-9]{2}' | sed "s|^|  $d/|"
+done | head -20
 
 sec "8. 生成器输出(候选)"
 find . -path ./.git -prune -o -type d \( -name generated -o -name dist -o -name node_modules \) -print 2>/dev/null | head -10

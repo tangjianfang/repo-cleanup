@@ -1,0 +1,34 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: syntax check
+        shell: bash
+        run: bash -n scripts/inspect.sh tests/make_fixture.sh tests/make_hard.sh tests/make_squash.sh tests/score.sh tests/run_battle.sh
+      - name: fixture build + trap self-check + inspect read-only + baseline scoring
+        shell: bash
+        run: |
+          set -e
+          ROOT="$RUNNER_TEMP/rc-ci"
+          bash tests/make_fixture.sh "$ROOT"
+          bash tests/make_hard.sh "$ROOT"
+          bash tests/make_squash.sh "$ROOT" | tee "$ROOT/squash.log"
+          ! grep -qE 'FIXTURE BROKEN|TRAP LOST' "$ROOT/squash.log"
+          BEFORE=$(git -C "$ROOT/repo" status --porcelain | wc -l)
+          bash scripts/inspect.sh "$ROOT/repo" > "$ROOT/report.txt"
+          AFTER=$(git -C "$ROOT/repo" status --porcelain | wc -l)
+          [ "$BEFORE" = "$AFTER" ] || { echo "inspect.sh is not read-only"; exit 1; }
+          [ "$(grep -c '^## ' "$ROOT/report.txt")" = 12 ] || { echo "inspect sections != 12"; exit 1; }
+          grep -q 'STALE: origin/gone-remote' "$ROOT/report.txt" || { echo "stale ref not detected"; exit 1; }
+          if bash tests/score.sh "$ROOT"; then
+            echo "uncleaned fixture must score <90"; exit 1
+          else
+            echo "baseline score correctly <90"
+          fi

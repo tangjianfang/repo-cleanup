@@ -1,5 +1,7 @@
 # repo-cleanup skill
 
+[![CI](https://github.com/tangjianfang/repo-cleanup/actions/workflows/ci.yml/badge.svg)](https://github.com/tangjianfang/repo-cleanup/actions/workflows/ci.yml)
+
 **EN** — A Claude Code skill that safely cleans git repositories: build artifacts,
 historical leftovers, stale branches, dead worktrees, stashes and stale remote-tracking
 refs. Core idea: deletion ops are tiered by *recoverability* (T1 auto → T4 named-item
